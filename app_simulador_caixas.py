@@ -163,7 +163,7 @@ if arquivo:
             comparativo_gerado_3d = st.session_state.df_resultado_3d.drop_duplicates(subset=["ID_Loja", "Braço", "ID_Caixa"])
             comparativo_gerado_3d = comparativo_gerado_3d.groupby(["ID_Loja", "Braço"]).agg(Caixas_App=("ID_Caixa", "nunique")).reset_index()
             comparativo_3d = pd.merge(comparativo_sistema_3d, comparativo_gerado_3d, on=["ID_Loja", "Braço"], how="outer").fillna(0)
-            comparativo_3d["Diferença"] = comparativo_3d["Caixas_App"] - comparativo_3d["Caixas_Sistema"]
+            comparativo_3d["Diferença"] = comparativo_3d["Caixas_Sistema"] - comparativo_3d["Caixas_App"]
 
             st.subheader("📊 Comparativo de Caixas por Loja e Braço (3D)")
             st.dataframe(comparativo_3d)

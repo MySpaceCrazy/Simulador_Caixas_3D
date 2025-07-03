@@ -54,7 +54,7 @@ def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_ca
     volume_caixa_litros = (comprimento_caixa * largura_caixa * altura_caixa * (ocupacao_percentual / 100)) / 1000
     resultado = []
     caixa_id_global = 1
-
+    
     # Limpa e padroniza as colunas
     df_mestre.columns = df_mestre.columns.str.strip()
 

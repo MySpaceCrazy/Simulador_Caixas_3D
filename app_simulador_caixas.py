@@ -57,13 +57,15 @@ def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_ca
     
     # Limpa e padroniza as colunas
     df_mestre.columns = df_mestre.columns.str.strip()
+    if "Unidade de peso G" in df_mestre.columns:
+        df_mestre.rename(columns={"Unidade de peso G": "Unidade de peso G"}, inplace=True)
 
     # Detecta o nome correto da coluna de unidade de peso
-    unidade_peso_coluna = [col for col in df_mestre.columns if "Unidade de peso" in col and "(produto" in col]
-    if not unidade_peso_coluna:
-        st.error("❌ Coluna de Unidade de Peso não encontrada no Dados.Mestre.")
-        return pd.DataFrame()
-    unidade_peso_coluna = unidade_peso_coluna[0]  # Pega o nome real da coluna
+    #unidade_peso_coluna = [col for col in df_mestre.columns if "Unidade de peso" in col and "(produto" in col]
+    #if not unidade_peso_coluna:
+    #    st.error("❌ Coluna de Unidade de Peso não encontrada no Dados.Mestre.")
+    #    return pd.DataFrame()
+    #unidade_peso_coluna = unidade_peso_coluna[0]  # Pega o nome real da coluna
 
     # Merge base com mestre
     df_join = pd.merge(

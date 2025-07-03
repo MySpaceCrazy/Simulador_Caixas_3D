@@ -168,7 +168,9 @@ if arquivo:
             st.subheader("📊 Comparativo de Caixas por Loja e Braço (3D)")
             st.dataframe(comparativo_3d)
 
-            st.markdown('<h3><img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_Caixas_3D/refs/heads/main/caixa-aberta.ico" width="24" style="vertical-align:middle;"> Detalhe caixas 3D</h3>', unsafe_allow_html=True)
+            st.markdown(
+                f'<h3><img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_Caixas_3D/refs/heads/main/caixa-aberta.ico" width="24" style="vertical-align:middle;"> Detalhe caixas 3D</h3>',
+                unsafe_allow_html=True)
            
             # Agrupa produtos dentro das caixas e calcula quantidade, volume e peso total por produto
             detalhe_agrupado = st.session_state.df_resultado_3d.groupby(
@@ -193,11 +195,6 @@ if arquivo:
                 "Peso_produto_KG": "Peso_produto(KG)"
             }, inplace=True)
             
-            # Exibe o DataFrame final
-            st.markdown(
-                f'<h3><img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_caixas/refs/heads/main/caixa-aberta.ico" width="24" style="vertical-align:middle;"> Detalhe caixas</h3>',
-                unsafe_allow_html=True
-            )
             st.dataframe(detalhe_final)
             
             buffer = io.BytesIO()

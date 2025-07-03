@@ -19,7 +19,7 @@ if "peso_maximo" not in st.session_state:
     st.session_state.peso_maximo = 20.0
 
 # --- Parâmetros ---
-col1, col2= st.columns(2)
+col1, col2 = st.columns(2)
 with col1:
     peso_temp = st.number_input("⚖️ Peso máximo por caixa (KG)", value=st.session_state.peso_maximo, step=0.1)
 with col2:
@@ -55,6 +55,11 @@ def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_ca
     resultado = []
     caixa_id_global = 1
 
+    # Limpa e renomeia as colunas problemáticas
+    df_mestre.columns = df_mestre.columns.str.strip()
+    if "Unidade de peso G (produto (numerador" in df_mestre.columns:
+        df_mestre.rename(columns={"Unidade de peso G (produto (numerador": "Unidade de peso G (produto (numerador))"}, inplace=True)
+
     # Merge base com mestre usando os campos corretos
     df_join = pd.merge(
         df_base,
@@ -63,27 +68,27 @@ def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_ca
         left_on=['ID_Produto', 'Unidade med.altern.'],
         right_on=['Produto', 'UM alternativa']
     )
-    
+
     if df_join.empty:
         st.warning("⚠️ Atenção: Não houve correspondência no merge. Verifique campos ID_Produto e UM alternativa.")
-    
+
     # Remove produtos sem dimensões
     df_join = df_join.dropna(subset=['Comprimento', 'Largura', 'Altura'])
-    
+
     # Agrupa produtos por loja e braço
     agrupadores = ["ID_Loja", "ID_Produto", "Descrição_produto", "Unidade med.altern.", "Comprimento", "Largura", "Altura", "Peso bruto", "Unidade de peso G (produto (numerador))"]
     if not ignorar_braco:
         agrupadores.insert(1, "Braço")
     else:
         df_join["Braço"] = "Todos"
-    
+
     grupo = df_join.groupby(agrupadores).agg({"Qtd solicitada (UN)": "sum"}).reset_index()
-    
+
     for keys, dados in grupo.groupby(["ID_Loja", "Braço"] if not ignorar_braco else ["ID_Loja"]):
         loja = keys[0]
         braco = keys[1] if not ignorar_braco else "Todos"
         caixas = []
-    
+
         for _, row in dados.iterrows():
             qtd = int(row["Qtd solicitada (UN)"])
             comprimento = row["Comprimento"]
@@ -92,9 +97,8 @@ def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_ca
             peso_bruto = row.get("Peso bruto", 0) or 0
             unidade_peso = str(row.get("Unidade de peso G (produto (numerador))", "")).upper()
             volume_un = (comprimento * largura * altura) / 1000
-    
             peso_un = (peso_bruto / 1000) if unidade_peso == "G" else peso_bruto
-    
+
             for _ in range(qtd):
                 colocado = False
                 for cx in caixas:
@@ -139,19 +143,16 @@ if arquivo:
 
         if st.button("🚀 Gerar Caixas (3D)"):
             st.session_state.peso_maximo = peso_temp
-
-            # 3D 
-            st.session_state.df_resultado_3d = empacotar_3d(df_base.copy(), df_mestre.copy(), comprimento_caixa, largura_caixa, altura_caixa, peso_temp, ocupacao_maxima)
+            st.session_state.df_resultado_3d = empacotar_3d(df_base.copy(), df_mestre.copy(), comprimento_caixa, largura_caixa, altura_caixa, peso_temp, ocupacao_maxima, ignorar_braco)
 
             total_3d = st.session_state.df_resultado_3d["ID_Caixa"].nunique()
             st.info(f"📦 Total de caixas geradas (3D): {total_3d}")
 
             df_caixas_3d = st.session_state.df_resultado_3d.drop_duplicates(subset=["ID_Caixa", "Volume_caixa_total(L)", "Peso_caixa_total(KG)"])
-            media_volume_3d = (df_caixas_3d["Volume_caixa_total(L)"].mean() / ((comprimento_caixa * largura_caixa * altura_caixa)/1000)) * 100
+            media_volume_3d = (df_caixas_3d["Volume_caixa_total(L)"].mean() / ((comprimento_caixa * largura_caixa * altura_caixa) / 1000)) * 100
             media_peso_3d = (df_caixas_3d["Peso_caixa_total(KG)"].mean() / peso_temp) * 100
             st.info(f"📈 Eficiência média das caixas 3D:\n• Volume: {media_volume_3d:.1f}%\n• Peso: {media_peso_3d:.1f}%")
 
-            # Comparativo Loja / Braço 3D
             comparativo_sistema_3d = df_base.groupby(["ID_Loja", "Braço"]).agg(Caixas_Sistema=("ID_Caixa", "nunique")).reset_index()
             comparativo_gerado_3d = st.session_state.df_resultado_3d.drop_duplicates(subset=["ID_Loja", "Braço", "ID_Caixa"])
             comparativo_gerado_3d = comparativo_gerado_3d.groupby(["ID_Loja", "Braço"]).agg(Caixas_App=("ID_Caixa", "nunique")).reset_index()
@@ -164,7 +165,6 @@ if arquivo:
             st.markdown('<h3><img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_Caixas_3D/refs/heads/main/caixa-aberta.ico" width="24" style="vertical-align:middle;"> Detalhe caixas 3D</h3>', unsafe_allow_html=True)
             st.dataframe(st.session_state.df_resultado_3d)
 
-            # Download Excel
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
                 st.session_state.df_resultado_3d.to_excel(writer, sheet_name="Resumo Caixas 3D", index=False)

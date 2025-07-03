@@ -55,12 +55,17 @@ def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_ca
     resultado = []
     caixa_id_global = 1
 
-    # Limpa e renomeia as colunas problemáticas
+    # Limpa e padroniza as colunas
     df_mestre.columns = df_mestre.columns.str.strip()
-    if "Unidade de peso G (produto (numerador" in df_mestre.columns:
-        df_mestre.rename(columns={"Unidade de peso G (produto (numerador": "Unidade de peso G (produto (numerador))"}, inplace=True)
 
-    # Merge base com mestre usando os campos corretos
+    # Detecta o nome correto da coluna de unidade de peso
+    unidade_peso_coluna = [col for col in df_mestre.columns if "Unidade de peso" in col and "(produto" in col]
+    if not unidade_peso_coluna:
+        st.error("❌ Coluna de Unidade de Peso não encontrada no Dados.Mestre.")
+        return pd.DataFrame()
+    unidade_peso_coluna = unidade_peso_coluna[0]  # Pega o nome real da coluna
+
+    # Merge base com mestre
     df_join = pd.merge(
         df_base,
         df_mestre,
@@ -76,7 +81,7 @@ def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_ca
     df_join = df_join.dropna(subset=['Comprimento', 'Largura', 'Altura'])
 
     # Agrupa produtos por loja e braço
-    agrupadores = ["ID_Loja", "ID_Produto", "Descrição_produto", "Unidade med.altern.", "Comprimento", "Largura", "Altura", "Peso bruto", "Unidade de peso G (produto (numerador))"]
+    agrupadores = ["ID_Loja", "ID_Produto", "Descrição_produto", "Unidade med.altern.", "Comprimento", "Largura", "Altura", "Peso bruto", unidade_peso_coluna]
     if not ignorar_braco:
         agrupadores.insert(1, "Braço")
     else:
@@ -95,9 +100,10 @@ def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_ca
             largura = row["Largura"]
             altura = row["Altura"]
             peso_bruto = row.get("Peso bruto", 0) or 0
-            unidade_peso = str(row.get("Unidade de peso G (produto (numerador))", "")).upper()
-            volume_un = (comprimento * largura * altura) / 1000
-            peso_un = (peso_bruto / 1000) if unidade_peso == "G" else peso_bruto
+            unidade_peso = str(row.get(unidade_peso_coluna, "")).upper()
+            volume_un = (comprimento * largura * altura) / 1000  # Litros
+
+            peso_un = (peso_bruto / 1000) if unidade_peso == "G" else peso_bruto  # Converte para KG se necessário
 
             for _ in range(qtd):
                 colocado = False
@@ -128,7 +134,7 @@ def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_ca
                     "ID_Produto": prod["ID_Produto"],
                     "Descrição_produto": prod["Descrição_produto"],
                     "Volume_item(L)": (prod["Comprimento"] * prod["Largura"] * prod["Altura"]) / 1000,
-                    "Peso_item(KG)": (prod["Peso bruto"] / 1000) if str(prod["Unidade de peso G (produto (numerador))"]).upper() == "G" else prod["Peso bruto"],
+                    "Peso_item(KG)": (prod["Peso bruto"] / 1000) if str(prod[unidade_peso_coluna]).upper() == "G" else prod["Peso bruto"],
                     "Volume_caixa_total(L)": cx["volume"],
                     "Peso_caixa_total(KG)": cx["peso"]
                 })

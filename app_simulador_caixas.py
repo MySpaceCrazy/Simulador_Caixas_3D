@@ -73,9 +73,9 @@ def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_ca
         if qtd <= 0:
             continue  # Ignora produtos sem quantidade
 
-        if qtd > 10000:
-            st.warning(f"⚠️ Produto {row['ID_Produto']} com quantidade muito alta ({qtd}). Limitando para 10000.")
-            qtd = 10000
+        if qtd > 30000:
+            st.warning(f"⚠️ Produto {row['ID_Produto']} com quantidade muito alta ({qtd}). Limitando para 30000.")
+            qtd = 30000
 
         volume_un = (row["Comprimento"] * row["Largura"] * row["Altura"]) / 1000
         peso_bruto = row.get("Peso bruto", 0) or 0

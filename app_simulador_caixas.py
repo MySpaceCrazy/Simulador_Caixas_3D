@@ -170,31 +170,36 @@ if arquivo:
 
             st.markdown('<h3><img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_Caixas_3D/refs/heads/main/caixa-aberta.ico" width="24" style="vertical-align:middle;"> Detalhe caixas 3D</h3>', unsafe_allow_html=True)
            
-            # Agrupa produtos dentro das caixas e calcula quantidade
+            # Agrupa produtos dentro das caixas e calcula quantidade, volume e peso total por produto
             detalhe_agrupado = st.session_state.df_resultado_3d.groupby(
                 ["ID_Caixa", "ID_Loja", "Braço", "ID_Produto", "Descrição_produto"],
                 as_index=False
-            ).agg(Quantidade=("ID_Produto", "count"),
-                  Volume_total_item=("Volume_item(L)", "sum"),
-                  Peso_total_item=("Peso_item(KG)", "sum"))
+            ).agg(
+                Qtd_separada_UN=("ID_Produto", "count"),
+                Volume_produto_L=("Volume_item(L)", "sum"),
+                Peso_produto_KG=("Peso_item(KG)", "sum")
+            )
             
-            # Renomeia colunas
-            detalhe_agrupado.rename(columns={
-                "Volume_total_item": "Volume_total_item(L)",
-                "Peso_total_item": "Peso_total_item(KG)"
-            }, inplace=True)
-            
-            # Busca o volume total da caixa e peso total da caixa
+            # Busca o volume e peso total da caixa
             info_caixas = st.session_state.df_resultado_3d.drop_duplicates(subset=["ID_Caixa"])[["ID_Caixa", "Volume_caixa_total(L)", "Peso_caixa_total(KG)"]]
             
-            # Junta no detalhe
-            detalhe_agrupado = pd.merge(detalhe_agrupado, info_caixas, on="ID_Caixa", how="left")
+            # Junta no detalhe (trazendo o mesmo total para cada produto da caixa)
+            detalhe_final = pd.merge(detalhe_agrupado, info_caixas, on="ID_Caixa", how="left")
+            
+            # Renomeia as colunas conforme seu outro app
+            detalhe_final.rename(columns={
+                "Qtd_separada_UN": "Qtd_separada(UN)",
+                "Volume_produto_L": "Volume_produto(L)",
+                "Peso_produto_KG": "Peso_produto(KG)"
+            }, inplace=True)
             
             # Exibe o DataFrame final
-            st.dataframe(detalhe_agrupado)
-
-
-
+            st.markdown(
+                f'<h3><img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_caixas/refs/heads/main/caixa-aberta.ico" width="24" style="vertical-align:middle;"> Detalhe caixas</h3>',
+                unsafe_allow_html=True
+            )
+            st.dataframe(detalhe_final)
+            
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
                 st.session_state.df_resultado_3d.to_excel(writer, sheet_name="Resumo Caixas 3D", index=False)

@@ -18,13 +18,11 @@ if "volume_maximo" not in st.session_state:
 if "peso_maximo" not in st.session_state:
     st.session_state.peso_maximo = 20.0
 
-# --- Parâmetros 2D ---
-col1, col2, col3 = st.columns(3)
+# --- Parâmetros ---
+col1, col2= st.columns(2)
 with col1:
     peso_temp = st.number_input("⚖️ Peso máximo por caixa (KG)", value=st.session_state.peso_maximo, step=0.1)
 with col2:
-    
-with col3:
     arquivo = st.file_uploader("📂 Selecionar arquivo (.xlsx)", type=["xlsx"])
 
 col4, col5 = st.columns(2)

@@ -154,16 +154,14 @@ if arquivo:
             st.subheader("📊 Comparativo de Caixas por Loja e Braço (3D)")
             st.dataframe(comparativo_3d)
 
-            st.markdown('<h3><img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_caixas/refs/heads/main/caixa-aberta.ico" width="24" style="vertical-align:middle;"> Detalhe caixas 3D</h3>', unsafe_allow_html=True)
+            st.markdown('<h3><img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_Caixas_3D/refs/heads/main/caixa-aberta.ico" width="24" style="vertical-align:middle;"> Detalhe caixas 3D</h3>', unsafe_allow_html=True)
             st.dataframe(st.session_state.df_resultado_3d)
 
             # Download Excel
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
-                st.session_state.df_resultado_2d.to_excel(writer, sheet_name="Resumo Caixas 2D", index=False)
-                comparativo.to_excel(writer, sheet_name="Comparativo 2D", index=False)
                 st.session_state.df_resultado_3d.to_excel(writer, sheet_name="Resumo Caixas 3D", index=False)
-            st.download_button("📥 Baixar Relatório Completo", data=buffer.getvalue(), file_name="Relatorio_Caixas_2D_3D.xlsx")
+            st.download_button("📥 Baixar Relatório Completo", data=buffer.getvalue(), file_name="Relatorio_Caixas_3D.xlsx")
 
     except Exception as e:
         st.error(f"Erro no processamento: {e}")

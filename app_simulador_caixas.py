@@ -59,7 +59,7 @@ def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_ca
     df_mestre.columns = df_mestre.columns.str.strip()
 
     # Detecta o nome correto da coluna de unidade de peso
-    unidade_peso_coluna = [col for col in df_mestre.columns if "Unidade de peso" in col and "(produto" in col]
+    unidade_peso_coluna = [col for col in df_mestre.columns if "Unidade de peso G" in col and "(produto" in col]
     if not unidade_peso_coluna:
         st.error("❌ Coluna de Unidade de Peso não encontrada no Dados.Mestre.")
         return pd.DataFrame()

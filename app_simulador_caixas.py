@@ -49,29 +49,37 @@ if arquivo is not None and arquivo != st.session_state.arquivo_atual:
     st.session_state.arquivo_atual = arquivo
     st.session_state.df_resultado_3d = None
 
-# --- Função Empacotar 3D Corrigida ---
+# --- Função Empacotar 3D ---
 def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_caixa, peso_max, ocupacao_percentual):
     volume_caixa_litros = (comprimento_caixa * largura_caixa * altura_caixa * (ocupacao_percentual / 100)) / 1000
     resultado = []
     caixa_id = 1
 
-    # Junta a base com o mestre para pegar as dimensões corretas
     df_join = pd.merge(df_base, df_mestre, how='left', left_on=['ID_Produto', 'Unidade med.altern.'], right_on=['Produto', 'UM alternativa'])
-    
-    # Aviso se o merge não trouxe resultados
-    if df_join.empty:
-        st.warning("⚠️ Atenção: Não houve correspondência no merge. Verifique se os campos 'ID_Produto' e 'UM alternativa' estão corretos.")
 
-    # Filtra registros que têm dimensões válidas
+    # Aviso se o merge não trouxe nada
+    if df_join.empty:
+        st.warning("⚠️ Atenção: Não houve correspondência no merge. Verifique os campos.")
+
     df_join = df_join.dropna(subset=['Comprimento', 'Largura', 'Altura'])
-    
+
+    st.write("🔍 Linhas após merge e dropna:", df_join.shape[0])
+    st.write(df_join.head(10))
+
     itens = []
     for _, row in df_join.iterrows():
-        qtd = int(row["Qtd.prev.orig.UMA"])
+        qtd = int(row.get("Qtd solicitada (UN)", 0))
+
+        if qtd <= 0:
+            continue  # Ignora produtos sem quantidade
+
+        if qtd > 10000:
+            st.warning(f"⚠️ Produto {row['ID_Produto']} com quantidade muito alta ({qtd}). Limitando para 10000.")
+            qtd = 10000
+
         volume_un = (row["Comprimento"] * row["Largura"] * row["Altura"]) / 1000
         peso_bruto = row.get("Peso bruto", 0) or 0
         unidade_peso = str(row.get("Unidade de peso", "")).upper()
-        
         peso_un = (peso_bruto / 1000) if unidade_peso == "G" else peso_bruto
 
         for _ in range(qtd):

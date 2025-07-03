@@ -5,7 +5,7 @@ import pandas as pd
 import io
 
 # --- Configuração inicial ---
-st.set_page_config(page_title="Simulador de Caixas", page_icon="📦", layout="wide")
+st.set_page_config(page_title="Simulador de Caixas - 3D", page_icon="📦", layout="wide")
 st.title("📦 Simulador de Caixas por Loja e Braço - 3D")
 
 # --- Controle de estado ---

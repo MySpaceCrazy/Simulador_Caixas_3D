@@ -50,80 +50,67 @@ if arquivo is not None and arquivo != st.session_state.arquivo_atual:
     st.session_state.df_resultado_3d = None
 
 # --- Função Empacotar 3D ---
-def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_caixa, peso_max, ocupacao_percentual):
+def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_caixa, peso_max, ocupacao_percentual, ignorar_braco=False):
     volume_caixa_litros = (comprimento_caixa * largura_caixa * altura_caixa * (ocupacao_percentual / 100)) / 1000
     resultado = []
     caixa_id_global = 1
 
-    # Merge do Base com Mestre
-    df_base = df_base.merge(df_mestre, how='left', left_on=['ID_Produto', 'Unidade med.altern.'], right_on=['Produto', 'UM alternativa'])
-
-    # Valida se houve correspondência
-    if df_base.empty:
-        st.warning("⚠️ Atenção: Não houve correspondência no merge entre Base e Dados.Mestre. Verifique colunas.")
-        return pd.DataFrame()
-
+    # Junta base com mestre para obter dimensões
+    df_join = pd.merge(df_base, df_mestre, how='left', left_on=['ID_Produto', 'Unidade med.altern.'], right_on=['Produto', 'UM alternativa'])
+    
+    if df_join.empty:
+        st.warning("⚠️ Atenção: Não houve correspondência no merge. Verifique se os campos 'ID_Produto' e 'UM alternativa' estão corretos.")
+    
     # Remove itens sem dimensões válidas
-    df_base = df_base.dropna(subset=['Comprimento', 'Largura', 'Altura'])
+    df_join = df_join.dropna(subset=['Comprimento', 'Largura', 'Altura'])
 
-    # Agrupa os produtos como no 2D
-    agrupadores = ["ID_Loja", "Braço", "ID_Produto", "Descrição_produto", "Unidade med.altern."]
-    df_base["Qtd solicitada (UN)"] = pd.to_numeric(df_base["Qtd solicitada (UN)"], errors='coerce').fillna(0)
-    df_base["Peso de carga"] = pd.to_numeric(df_base["Peso de carga"], errors='coerce').fillna(0)
-    df_base["Volume de carga"] = pd.to_numeric(df_base["Volume de carga"], errors='coerce').fillna(0)
+    # Agrupa por Loja, Braço, Produto
+    agrupadores = ["ID_Loja", "ID_Produto", "Descrição_produto", "Unidade med.altern.", "Comprimento", "Largura", "Altura", "Peso bruto", "Unidade de peso"]
+    if not ignorar_braco:
+        agrupadores.insert(1, "Braço")
+    else:
+        df_join["Braço"] = "Todos"
 
-    grupo = df_base.groupby(agrupadores).agg({
-        "Qtd solicitada (UN)": "sum",
-        "Peso de carga": "sum",
-        "Volume de carga": "sum",
-        "Comprimento": "first",
-        "Largura": "first",
-        "Altura": "first",
-        "Peso bruto": "first",
-        "Unidade de peso": "first"
-    }).reset_index()
+    grupo = df_join.groupby(agrupadores).agg({"Qtd solicitada (UN)": "sum"}).reset_index()
 
-    grupo = grupo.sort_values(by=["Volume de carga", "Peso de carga"], ascending=False)
-
-    for keys, subgrupo in grupo.groupby(["ID_Loja", "Braço"]):
+    # Itera por loja e braço
+    for keys, dados in grupo.groupby(["ID_Loja", "Braço"] if not ignorar_braco else ["ID_Loja"]):
         loja = keys[0]
-        braco = keys[1]
+        braco = keys[1] if not ignorar_braco else "Todos"
         caixas = []
 
-        for _, prod in subgrupo.iterrows():
-            qtd_restante = int(prod["Qtd solicitada (UN)"])
-            volume_unit = (prod["Comprimento"] * prod["Largura"] * prod["Altura"]) / 1000
-            peso_unit = prod["Peso bruto"] or 0
+        for _, row in dados.iterrows():
+            qtd = int(row["Qtd solicitada (UN)"])
+            comprimento = row["Comprimento"]
+            largura = row["Largura"]
+            altura = row["Altura"]
+            peso_bruto = row.get("Peso bruto", 0) or 0
+            unidade_peso = str(row.get("Unidade de peso", "")).upper()
+            volume_un = (comprimento * largura * altura) / 1000
 
-            if str(prod.get("Unidade de peso", "")).upper() == "G":
-                peso_unit /= 1000
+            peso_un = (peso_bruto / 1000) if unidade_peso == "G" else peso_bruto
 
-            for _ in range(qtd_restante):
-                melhor_idx = -1
-                for idx, cx in enumerate(caixas):
-                    if (
-                        cx["volume"] + volume_unit <= volume_caixa_litros and
-                        cx["peso"] + peso_unit <= peso_max
-                    ):
-                        melhor_idx = idx
+            for _ in range(qtd):
+                colocado = False
+                for cx in caixas:
+                    if (cx["volume"] + volume_un <= volume_caixa_litros) and (cx["peso"] + peso_un <= peso_max):
+                        cx["volume"] += volume_un
+                        cx["peso"] += peso_un
+                        cx["produtos"].append(row)
+                        colocado = True
                         break
-
-                if melhor_idx != -1:
-                    cx = caixas[melhor_idx]
-                    cx["volume"] += volume_unit
-                    cx["peso"] += peso_unit
-                    cx["produtos"].append(prod)
-                else:
+                if not colocado:
                     caixas.append({
                         "ID_Caixa": f"{loja}_{braco}_{caixa_id_global}",
                         "ID_Loja": loja,
                         "Braço": braco,
-                        "volume": volume_unit,
-                        "peso": peso_unit,
-                        "produtos": [prod]
+                        "volume": volume_un,
+                        "peso": peso_un,
+                        "produtos": [row]
                     })
                     caixa_id_global += 1
 
+        # Monta resultado final
         for cx in caixas:
             for prod in cx["produtos"]:
                 resultado.append({
@@ -132,15 +119,14 @@ def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_ca
                     "Braço": cx["Braço"],
                     "ID_Produto": prod["ID_Produto"],
                     "Descrição_produto": prod["Descrição_produto"],
-                    "Qtd_item(UN)": 1,
                     "Volume_item(L)": (prod["Comprimento"] * prod["Largura"] * prod["Altura"]) / 1000,
-                    "Peso_item(KG)": (prod["Peso bruto"] or 0) / 1000 if str(prod.get("Unidade de peso", "")).upper() == "G" else prod["Peso bruto"],
+                    "Peso_item(KG)": (prod["Peso bruto"] / 1000) if str(prod["Unidade de peso"]).upper() == "G" else prod["Peso bruto"],
                     "Volume_caixa_total(L)": cx["volume"],
                     "Peso_caixa_total(KG)": cx["peso"]
                 })
 
     return pd.DataFrame(resultado)
-
+    
 # --- Execução ---
 if arquivo:
     try:

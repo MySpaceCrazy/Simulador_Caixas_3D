@@ -169,7 +169,19 @@ if arquivo:
             st.dataframe(comparativo_3d)
 
             st.markdown('<h3><img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_Caixas_3D/refs/heads/main/caixa-aberta.ico" width="24" style="vertical-align:middle;"> Detalhe caixas 3D</h3>', unsafe_allow_html=True)
-            st.dataframe(st.session_state.df_resultado_3d)
+           
+            # Agrupa produtos dentro das caixas
+            detalhe_agrupado = st.session_state.df_resultado_3d.groupby(
+                ["ID_Caixa", "ID_Loja", "Braço", "ID_Produto", "Descrição_produto", "Volume_item(L)", "Peso_item(KG)"],
+                as_index=False
+            ).agg(Quantidade=("ID_Produto", "count"))
+            
+            # Recalcula volume e peso totais estimados da caixa
+            detalhe_agrupado["Volume_total_item(L)"] = detalhe_agrupado["Volume_item(L)"] * detalhe_agrupado["Quantidade"]
+            detalhe_agrupado["Peso_total_item(KG)"] = detalhe_agrupado["Peso_item(KG)"] * detalhe_agrupado["Quantidade"]
+            
+            st.dataframe(detalhe_agrupado)
+
 
             buffer = io.BytesIO()
             with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:

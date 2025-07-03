@@ -197,10 +197,12 @@ if arquivo:
             
             st.dataframe(detalhe_final)
             
-            buffer = io.BytesIO()
-            with pd.ExcelWriter(buffer, engine="xlsxwriter") as writer:
-                st.session_state.df_resultado_3d.to_excel(writer, sheet_name="Resumo Caixas 3D", index=False)
-            st.download_button("📥 Baixar Relatório Completo", data=buffer.getvalue(), file_name="Relatorio_Caixas_3D.xlsx")
+            # Exporta o detalhe final para Excel
+            buffer_detalhe = io.BytesIO()
+            with pd.ExcelWriter(buffer_detalhe, engine="xlsxwriter") as writer:
+                detalhe_final.to_excel(writer, sheet_name="Detalhe Caixas 3D", index=False)
+            st.download_button("📥 Baixar Detalhe das Caixas", data=buffer_detalhe.getvalue(), file_name="Detalhe_Caixas_3D.xlsx")
+
 
     except Exception as e:
         st.error(f"Erro no processamento: {e}")

@@ -170,17 +170,29 @@ if arquivo:
 
             st.markdown('<h3><img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_Caixas_3D/refs/heads/main/caixa-aberta.ico" width="24" style="vertical-align:middle;"> Detalhe caixas 3D</h3>', unsafe_allow_html=True)
            
-            # Agrupa produtos dentro das caixas
+            # Agrupa produtos dentro das caixas e calcula quantidade
             detalhe_agrupado = st.session_state.df_resultado_3d.groupby(
-                ["ID_Caixa", "ID_Loja", "Braço", "ID_Produto", "Descrição_produto", "Volume_item(L)", "Peso_item(KG)"],
+                ["ID_Caixa", "ID_Loja", "Braço", "ID_Produto", "Descrição_produto"],
                 as_index=False
-            ).agg(Quantidade=("ID_Produto", "count"))
+            ).agg(Quantidade=("ID_Produto", "count"),
+                  Volume_total_item=("Volume_item(L)", "sum"),
+                  Peso_total_item=("Peso_item(KG)", "sum"))
             
-            # Recalcula volume e peso totais estimados da caixa
-            detalhe_agrupado["Volume_total_item(L)"] = detalhe_agrupado["Volume_item(L)"] * detalhe_agrupado["Quantidade"]
-            detalhe_agrupado["Peso_total_item(KG)"] = detalhe_agrupado["Peso_item(KG)"] * detalhe_agrupado["Quantidade"]
+            # Renomeia colunas
+            detalhe_agrupado.rename(columns={
+                "Volume_total_item": "Volume_total_item(L)",
+                "Peso_total_item": "Peso_total_item(KG)"
+            }, inplace=True)
             
+            # Busca o volume total da caixa e peso total da caixa
+            info_caixas = st.session_state.df_resultado_3d.drop_duplicates(subset=["ID_Caixa"])[["ID_Caixa", "Volume_caixa_total(L)", "Peso_caixa_total(KG)"]]
+            
+            # Junta no detalhe
+            detalhe_agrupado = pd.merge(detalhe_agrupado, info_caixas, on="ID_Caixa", how="left")
+            
+            # Exibe o DataFrame final
             st.dataframe(detalhe_agrupado)
+
 
 
             buffer = io.BytesIO()

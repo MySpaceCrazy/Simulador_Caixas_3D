@@ -50,11 +50,22 @@ if arquivo is not None and arquivo != st.session_state.arquivo_atual:
     st.session_state.df_resultado_3d = None
 
 # --- Função Empacotar 3D ---
-def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_caixa, peso_max, ocupacao_percentual, ignorar_braco=False):
+def empacotar_3d(df_base, df_mestre, comprimento_caixa, largura_caixa, altura_caixa, peso_max, ocupacao_percentual, ignorar_braco=False, converter_pac_para_un=False):
     volume_caixa_litros = (comprimento_caixa * largura_caixa * altura_caixa * (ocupacao_percentual / 100)) / 1000
     resultado = []
     caixa_id_global = 1
-    
+
+    # --- Ajuste PAC para UN se a flag estiver marcada ---
+    if converter_pac_para_un:
+        df_base = df_base.copy()  # Evita alterar o dataframe original
+        pac_rows = df_base["Unidade med.altern."] == "PAC"
+
+        # Atualiza a unidade para "UN"
+        df_base.loc[pac_rows, "Unidade med.altern."] = "UN"
+
+        # Substitui a quantidade e recalcula volume e peso proporcionais às unidades solicitadas
+        df_base.loc[pac_rows, "Qtd.prev.orig.UMA"] = df_base.loc[pac_rows, "Qtd solicitada (UN)"]
+
     # Limpa e padroniza as colunas
     df_mestre.columns = df_mestre.columns.str.strip()
 

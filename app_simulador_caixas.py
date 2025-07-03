@@ -128,7 +128,6 @@ if arquivo:
         df_mestre = pd.read_excel(arquivo, sheet_name="Dados.Mestre")
 
         if st.button("🚀 Gerar Caixas (3D)"):
-            st.session_state.volume_maximo = volume_temp
             st.session_state.peso_maximo = peso_temp
 
             # 3D 

@@ -172,7 +172,7 @@ if arquivo:
            
             # Agrupa produtos dentro das caixas
             detalhe_agrupado = st.session_state.df_resultado_3d.groupby(
-                ["ID_Caixa", "ID_Loja", "Braço", "ID_Produto", "Descrição_produto"],
+                ["ID_Caixa", "ID_Loja", "Braço", "ID_Produto", "Descrição_produto", "Volume_item(L)", "Peso_item(KG)"],
                 as_index=False
             ).agg(Quantidade=("ID_Produto", "count"))
             

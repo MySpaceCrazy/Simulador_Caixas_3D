@@ -6,7 +6,7 @@ import io
 
 # --- Configuração inicial ---
 st.set_page_config(page_title="Simulador de Caixas", page_icon="📦", layout="wide")
-st.title("📦 Simulador de Caixas por Loja e Braço")
+st.title("📦 Simulador de Caixas por Loja e Braço - 3D")
 
 # --- Controle de estado ---
 if "df_resultado_3d" not in st.session_state:

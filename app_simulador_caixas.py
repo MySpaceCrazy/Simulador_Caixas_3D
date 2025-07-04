@@ -214,6 +214,18 @@ if arquivo:
                 detalhe_final.to_excel(writer, sheet_name="Detalhe Caixas 3D", index=False)
             st.download_button("📥 Baixar Detalhe das Caixas", data=buffer_detalhe.getvalue(), file_name="Detalhe_Caixas_3D.xlsx")
 
+            # --- Seção Autor ---
+            
+            st.markdown("---")
+            
+            st.markdown("""
+                <div class="author">
+                    <img src="https://avatars.githubusercontent.com/u/90271653?v=4" width="120">
+                    <h3>Anderson Oliveira</h3>
+                    <p>🔧 Desenvolvedor de soluções em logística e automações <br> 🌐 <a href="https://github.com/MySpaceCrazy" target="_blank">GitHub</a> | <a href="https://www.linkedin.com/in/seulinkedin" target="_blank">LinkedIn</a></p>
+                </div>
+            """, unsafe_allow_html=True) 
+            
 
     except Exception as e:
         st.error(f"Erro no processamento: {e}")

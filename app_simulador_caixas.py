@@ -267,5 +267,6 @@ st.markdown("""
             <img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_Caixas_3D/refs/heads/main/linkedin.ico" alt="LinkedIn" style="width: 32px; height: 32px;">
         </a>
     </div>
+    <p class="footer-text">© 2025 Ânderson Oliveira. Todos os direitos reservados.</p>
 </div>
 """, unsafe_allow_html=True) 
